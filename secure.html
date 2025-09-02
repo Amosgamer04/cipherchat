@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Chat - CipherChat</title>
+    <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0b;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            line-height: 1.4;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 100%;
+            margin: 0 auto;
+            background: #1a1a1c;
+            position: relative;
+        }
+
+        /* Header */
+        .chat-header {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2a2a2d;
+            border-bottom: 1px solid #3a3a3d;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-icon {
+            font-size: 1.2rem;
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.15);
+            padding: 8px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #ffffff;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 8px;
+            color: #ffd700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Messages Area */
+        .chat-messages {
+            flex: 1;
+            padding: 20px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #1a1a1c;
+            scroll-behavior: smooth;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(15px) scale(0.95); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+
+        .incoming {
+            align-self: flex-start;
+            background: #2d2d30;
+            border-top-left-radius: 4px;
+            border: 1px solid #3a3a3d;
+        }
+
+        .outgoing {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%);
+            border-top-right-radius: 4px;
+            color: #1a1a1c;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.25);
+        }
+
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        .message-content {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message-content img, .message-content video {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 4px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .message-content img:hover, .message-content video:hover {
+            transform: scale(1.02);
+        }
+
+        .voice-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-message audio {
+            flex: 1;
+            height: 32px;
+        }
+
+        /* Input Area */
+        .chat-input-container {
+            padding: 16px 16px 20px;
+            display: flex;
+            gap: 12px;
+            background: #2a2a2d;
+            border-top: 1px solid #3a3a3d;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .input-tools {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .tool-btn:active {
+            transform: scale(0.95);
+        }
+
+        .tool-btn.recording {
+            background: #ff4757;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1);
+            }
+            50% { 
+                transform: scale(1.1);
+            }
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 16px;
+            background: #1a1a1c;
+            border: 1px solid #3a3a3d;
+            border-radius: 20px;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+            resize: none;
+            max-height: 120px;
+            min-height: 36px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .chat-input:focus {
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        .chat-input::placeholder {
+            color: #6a6a6d;
+        }
+
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%);
+            border: none;
+            color: #1a1a1c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Voice Recording UI */
+        .recording-ui {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 28, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px 24px;
+            border-radius: 16px;
+            text-align: center;
+            z-index: 1000;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+
+        .voice-controls button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .voice-send {
+            background: #00ff88;
+            color: #1a1a1c;
+        }
+
+        .voice-cancel {
+            background: #ff4757;
+            color: white;
+        }
+
+        .voice-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 32px;
+            margin: 12px 0;
+        }
+
+        .wave-bar {
+            width: 3px;
+            height: 12px;
+            background: #ffd700;
+            border-radius: 2px;
+            animation: wave 1.2s infinite ease-in-out;
+        }
+
+        @keyframes wave {
+            0%, 100% { 
+                height: 8px; 
+                opacity: 0.6;
+            }
+            50% { 
+                height: 24px; 
+                opacity: 1;
+            }
+        }
+
+        .recording-ui p {
+            font-size: 13px;
+            color: #ffd700;
+            font-weight: 500;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            background: #2a2a2d;
+            padding: 32px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 420px;
+            border: 1px solid #3a3a3d;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-title {
+            color: #ffd700;
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-group small {
+            color: #8a8a8d;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1a1a1c;
+            border: 1px solid #3a3a3d;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        .form-control[readonly] {
+            background: #2a2a2d;
+            color: #8a8a8d;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            flex: 1;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%);
+            color: #1a1a1c;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff3742;
+            transform: translateY(-1px);
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(26, 26, 28, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            font-size: 12px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .connection-status.show {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ffcc00;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .connection-status.connected .status-dot {
+            background: #00ff88;
+            animation: none;
+        }
+
+        .connection-status.error .status-dot {
+            background: #ff4757;
+            animation: pulse 0.8s infinite;
+        }
+
+        /* Error and Status Messages */
+        .error-message, .status-message {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 28, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            z-index: 3000;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .error-message {
+            color: #ff4757;
+            border-color: rgba(255, 71, 87, 0.3);
+        }
+
+        .status-message {
+            color: #00ff88;
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Media Modal */
+        .media-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            backdrop-filter: blur(10px);
+        }
+
+        .media-modal img, .media-modal video {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        .media-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* File link styling */
+        .file-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.2s ease;
+        }
+
+        .file-link:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .chat-container {
+                border-radius: 0;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+
+            .modal-content {
+                padding: 24px;
+                margin: 20px;
+            }
+
+            .chat-header {
+                padding: 10px 16px;
+            }
+
+            .action-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .chat-input-container {
+                padding: 12px 16px 16px;
+            }
+
+            .connection-status {
+                top: 70px;
+                right: 10px;
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+
+            .status-dot {
+                width: 6px;
+                height: 6px;
+            }
+
+            .status-text {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .input-tools {
+                gap: 6px;
+            }
+
+            .tool-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 12px;
+            }
+
+            .send-btn {
+                width: 32px;
+                height: 32px;
+            }
+
+            .chat-input {
+                padding: 8px 12px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            .connection-status {
+                right: 5px;
+                top: 65px;
+                padding: 4px 8px;
+            }
+        }
+
+        /* Dark scrollbar for webkit browsers */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Chat Container -->
+    <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-title">
+                <div class="chat-icon">🔒</div>
+                <div class="chat-name">Secure Chat</div>
+            </div>
+            <div class="chat-actions">
+                <div class="action-btn" id="clearChatBtn">🧹 Clear</div>
+                <div class="action-btn" id="settingsBtn">⚙️ Settings</div>
+                <div class="action-btn" id="leaveBtn">🚪 Leave</div>
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be loaded here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-container">
+            <div class="input-tools">
+                <div class="tool-btn" id="mediaBtn" title="Send image/video">📷</div>
+                <div class="tool-btn" id="fileBtn" title="Send file">📁</div>
+                <div class="tool-btn" id="voiceBtn" title="Record voice note">🎤</div>
+            </div>
+            
+            <textarea class="chat-input" id="messageInput" placeholder="Type your message..." rows="1"></textarea>
+            
+            <button class="send-btn" id="sendBtn">✉️</button>
+        </div>
+    </div>
+
+    <!-- Voice Recording UI -->
+    <div class="recording-ui" id="recordingUI">
+        <div class="voice-wave">
+            <div class="wave-bar" style="animation-delay: 0s"></div>
+            <div class="wave-bar" style="animation-delay: 0.2s"></div>
+            <div class="wave-bar" style="animation-delay: 0.4s"></div>
+            <div class="wave-bar" style="animation-delay: 0.6s"></div>
+            <div class="wave-bar" style="animation-delay: 0.8s"></div>
+        </div>
+        <p id="recordingText">Recording...</p>
+        <div class="voice-controls">
+            <button class="voice-send" id="voiceSendBtn">Send</button>
+            <button class="voice-cancel" id="voiceCancelBtn">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Username Modal -->
+    <div class="modal-overlay" id="usernameModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Welcome to Secure Chat</h2>
+            <div class="form-group">
+                <label for="usernameInput">Your Display Name</label>
+                <input type="text" class="form-control" id="usernameInput" placeholder="Enter your name">
+                <small>Default: <span id="defaultUsername">User_123</span></small>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="useDefaultBtn">Use Default</button>
+                <button class="btn btn-primary" id="saveUsernameBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal" style="display: none">
+        <div class="modal-content">
+            <h2 class="modal-title">Chat Settings</h2>
+            <div class="form-group">
+                <label for="changeUsernameInput">Change Username</label>
+                <input type="text" class="form-control" id="changeUsernameInput" placeholder="Enter new username">
+            </div>
+            <div class="form-group">
+                <label for="userIdDisplay">Your User ID</label>
+                <input type="text" class="form-control" id="userIdDisplay" readonly>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="closeSettingsBtn">Close</button>
+                <button class="btn btn-primary" id="saveSettingsBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear Chat Modal -->
+    <div class="modal-overlay" id="clearChatModal" style="display: none">
+        <div class="modal-content">
+            <h2 class="modal-title">Clear Chat History</h2>
+            <p style="color: #e0e0e0; margin-bottom: 24px; text-align: center;">
+                Are you sure you want to clear all messages? This action cannot be undone.
+            </p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="cancelClearBtn">Cancel</button>
+                <button class="btn btn-danger" id="confirmClearBtn">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="connection-status" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span class="status-text">Connecting...</span>
+    </div>
+
+    <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    class SecureChat {
+        constructor() {
+            this.config = {
+                apiBase: 'secure_api.php',
+                pollInterval: 3000,
+                chatId: this.getChatIdFromUrl(),
+                lastMessageId: 0,
+                isTyping: false,
+                retryCount: 0,
+                isRecording: false,
+                mediaRecorder: null,
+                audioChunks: [],
+                audioBlob: null,
+                userId: this.generateId('user_'),
+                defaultUsername: `User_${Math.floor(Math.random() * 1000)}`,
+                username: '',
+                lastConnectionStatus: '',
+                connectionStatusTimeout: null
+            };
+
+            this.elements = {
+                messages: document.getElementById('chatMessages'),
+                input: document.getElementById('messageInput'),
+                sendBtn: document.getElementById('sendBtn'),
+                mediaBtn: document.getElementById('mediaBtn'),
+                fileBtn: document.getElementById('fileBtn'),
+                voiceBtn: document.getElementById('voiceBtn'),
+                settingsBtn: document.getElementById('settingsBtn'),
+                leaveBtn: document.getElementById('leaveBtn'),
+                clearChatBtn: document.getElementById('clearChatBtn'),
+                usernameModal: document.getElementById('usernameModal'),
+                usernameInput: document.getElementById('usernameInput'),
+                defaultUsername: document.getElementById('defaultUsername'),
+                useDefaultBtn: document.getElementById('useDefaultBtn'),
+                saveUsernameBtn: document.getElementById('saveUsernameBtn'),
+                settingsModal: document.getElementById('settingsModal'),
+                changeUsernameInput: document.getElementById('changeUsernameInput'),
+                userIdDisplay: document.getElementById('userIdDisplay'),
+                closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+                saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+                clearChatModal: document.getElementById('clearChatModal'),
+                cancelClearBtn: document.getElementById('cancelClearBtn'),
+                confirmClearBtn: document.getElementById('confirmClearBtn'),
+                recordingUI: document.getElementById('recordingUI'),
+                recordingText: document.getElementById('recordingText'),
+                voiceSendBtn: document.getElementById('voiceSendBtn'),
+                voiceCancelBtn: document.getElementById('voiceCancelBtn'),
+                connectionStatus: document.getElementById('connectionStatus')
+            };
+
+            this.elements.defaultUsername.textContent = this.config.defaultUsername;
+            this.showUsernameModal();
+            this.initEventListeners();
+        }
+
+        initEventListeners() {
+            // Message sending
+            this.elements.sendBtn.addEventListener('click', () => this.sendMessage());
+            this.elements.input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            });
+
+            // File upload buttons
+            this.elements.mediaBtn.addEventListener('click', () => this.uploadFile('media'));
+            this.elements.fileBtn.addEventListener('click', () => this.uploadFile('file'));
+
+            // Voice recording - tap to start/stop
+            this.elements.voiceBtn.addEventListener('click', () => this.toggleRecording());
+
+            // Voice controls
+            this.elements.voiceSendBtn.addEventListener('click', () => this.sendVoiceMessage());
+            this.elements.voiceCancelBtn.addEventListener('click', () => this.cancelRecording());
+
+            // Modals
+            this.elements.useDefaultBtn.addEventListener('click', () => this.useDefaultUsername());
+            this.elements.saveUsernameBtn.addEventListener('click', () => this.saveUsername());
+            this.elements.settingsBtn.addEventListener('click', () => this.showSettingsModal());
+            this.elements.closeSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
+            this.elements.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
+            this.elements.leaveBtn.addEventListener('click', () => this.leaveChat());
+
+            // Clear chat
+            this.elements.clearChatBtn.addEventListener('click', () => this.showClearChatModal());
+            this.elements.cancelClearBtn.addEventListener('click', () => this.hideClearChatModal());
+            this.elements.confirmClearBtn.addEventListener('click', () => this.clearChat());
+        }
+
+        async initChat() {
+            if (!this.config.chatId) {
+                this.showError('Invalid chat link');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+                return;
+            }
+
+            try {
+                await this.verifyChatSession();
+                await this.joinChat();
+                this.startMessagePolling();
+                this.updateConnectionStatus('connected');
+            } catch (error) {
+                console.error('Initialization error:', error);
+                this.handleConnectionError(error);
+            }
+        }
+
+        async verifyChatSession() {
+            const { status } = await this.apiRequest('verify_link', { 
+                chat_id: this.config.chatId 
+            });
+            if (status !== 'success') throw new Error('Invalid chat link');
+        }
+
+        async joinChat() {
+            const response = await this.apiRequest('join_chat', {
+                chat_id: this.config.chatId,
+                user_id: this.config.userId,
+                user_name: this.config.username
+            });
+            
+            if (response.status === 'success') {
+                this.updateParticipantCount(response.participants_count);
+            }
+        }
+
+        async sendMessage() {
+            const content = this.elements.input.value.trim();
+            if (!content) return;
+
+            this.elements.input.value = '';
+            
+            try {
+                const { status, message_id } = await this.apiRequest('send_message', {
+                    chat_id: this.config.chatId,
+                    sender_id: this.config.userId,
+                    sender_name: this.config.username,
+                    content: content,
+                    message_type: 'text'
+                });
+
+                if (status === 'success') {
+                    this.displayMessage({
+                        id: message_id,
+                        sender_id: this.config.userId,
+                        sender_name: this.config.username,
+                        content: content,
+                        created_at: new Date().toISOString()
+                    });
+                }
+            } catch (error) {
+                console.error('Send error:', error);
+                this.showError('Failed to send message');
+            }
+        }
+
+        async getMessages() {
+            try {
+                const { status, messages } = await this.apiRequest('get_messages', {
+                    chat_id: this.config.chatId,
+                    last_message_id: this.config.lastMessageId
+                });
+
+                if (status === 'success') {
+                    if (messages.length > 0) {
+                        messages.forEach(msg => this.displayMessage(msg));
+                        this.config.lastMessageId = Math.max(
+                            this.config.lastMessageId, 
+                            ...messages.map(m => m.id)
+                        );
+                        this.scrollToBottom();
+                    }
+                    this.config.retryCount = 0;
+                    this.updateConnectionStatus('connected');
+                }
+            } catch (error) {
+                console.error('Failed to get messages:', error);
+                this.handleConnectionError(error);
+                
+                const retryDelay = Math.min(1000 * Math.pow(2, this.config.retryCount), 30000);
+                this.config.retryCount++;
+                
+                setTimeout(() => this.getMessages(), retryDelay);
+            }
+        }
+
+        async uploadFile(type) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            
+            if (type === 'media') {
+                input.accept = 'image/*,video/*';
+            } else {
+                input.accept = '*';
+            }
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Show upload progress
+                this.showMessage('Uploading file...');
+
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'upload_file');
+                    formData.append('chat_id', this.config.chatId);
+                    formData.append('sender_id', this.config.userId);
+                    formData.append('sender_name', this.config.username);
+                    formData.append('file', file);
+
+                    const response = await fetch(this.config.apiBase, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        // Create proper content based on file type
+                        let content = '';
+                        let messageType = 'file';
+                        
+                        if (file.type.startsWith('image/')) {
+                            content = '📷 Image';
+                            messageType = 'image';
+                        } else if (file.type.startsWith('video/')) {
+                            content = '🎥 Video';
+                            messageType = 'video';
+                        } else {
+                            content = `📁 ${file.name}`;
+                        }
+
+                        this.displayMessage({
+                            id: result.message_id,
+                            sender_id: this.config.userId,
+                            sender_name: this.config.username,
+                            content: content,
+                            created_at: new Date().toISOString(),
+                            message_type: messageType,
+                            file_info: {
+                                name: file.name,
+                                url: result.file_url,
+                                type: file.type,
+                                size: file.size
+                            }
+                        });
+                        
+                        this.showMessage('File uploaded successfully!');
+                    } else {
+                        throw new Error(result.message || 'Upload failed');
+                    }
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    this.showError('File upload failed: ' + error.message);
+                }
+            };
+
+            input.click();
+        }
+
+        async toggleRecording() {
+            if (this.config.isRecording) {
+                await this.stopRecording();
+            } else {
+                await this.startRecording();
+            }
+        }
+
+        async startRecording() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Microphone access not supported in this browser');
+                }
+
+                this.config.isRecording = true;
+                this.elements.voiceBtn.classList.add('recording');
+                this.elements.recordingUI.style.display = 'block';
+                this.elements.recordingText.textContent = 'Recording...';
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+                
+                this.config.mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                
+                this.config.audioChunks = [];
+                
+                this.config.mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        this.config.audioChunks.push(e.data);
+                    }
+                };
+                
+                this.config.mediaRecorder.start(100);
+                
+                // Auto-stop after 60 seconds
+                setTimeout(() => {
+                    if (this.config.isRecording) {
+                        this.stopRecording();
+                    }
+                }, 60000);
+                
+            } catch (error) {
+                console.error('Recording failed:', error);
+                let errorMessage = 'Failed to start recording';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = 'No microphone found. Please connect a microphone and try again.';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage = 'Audio recording not supported in this browser.';
+                }
+                
+                this.showError(errorMessage);
+                this.cancelRecording();
+            }
+        }
+
+        async stopRecording() {
+            if (!this.config.isRecording || !this.config.mediaRecorder) return;
+            
+            return new Promise((resolve) => {
+                this.config.mediaRecorder.onstop = () => {
+                    if (this.config.audioChunks.length > 0) {
+                        this.config.audioBlob = new Blob(this.config.audioChunks, { 
+                            type: 'audio/webm;codecs=opus' 
+                        });
+                        this.elements.recordingText.textContent = 'Recording ready to send';
+                    } else {
+                        this.cancelRecording();
+                    }
+                    
+                    // Stop all tracks
+                    this.config.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    resolve();
+                };
+                
+                this.config.isRecording = false;
+                this.elements.voiceBtn.classList.remove('recording');
+                this.config.mediaRecorder.stop();
+            });
+        }
+
+        async sendVoiceMessage() {
+            if (!this.config.audioBlob) return;
+
+            try {
+                this.elements.recordingUI.style.display = 'none';
+                this.showMessage('Sending voice message...');
+                
+                const formData = new FormData();
+                formData.append('action', 'upload_voice');
+                formData.append('chat_id', this.config.chatId);
+                formData.append('sender_id', this.config.userId);
+                formData.append('sender_name', this.config.username);
+                formData.append('voice', this.config.audioBlob, 'voice-message.webm');
+                
+                const response = await fetch(this.config.apiBase, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    this.displayMessage({
+                        id: result.message_id,
+                        sender_id: this.config.userId,
+                        sender_name: this.config.username,
+                        content: '🎤 Voice message',
+                        created_at: new Date().toISOString(),
+                        message_type: 'voice',
+                        is_voice: true,
+                        voice_url: result.voice_url,
+                        duration: result.duration || 0
+                    });
+                    
+                    this.showMessage('Voice message sent!');
+                } else {
+                    throw new Error(result.message || 'Failed to send voice message');
+                }
+            } catch (error) {
+                console.error('Voice message send failed:', error);
+                this.showError('Failed to send voice message: ' + error.message);
+            } finally {
+                this.resetRecording();
+            }
+        }
+
+        cancelRecording() {
+            if (this.config.mediaRecorder && this.config.mediaRecorder.state !== 'inactive') {
+                this.config.mediaRecorder.stop();
+                this.config.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            this.resetRecording();
+        }
+
+        resetRecording() {
+            this.config.isRecording = false;
+            this.config.audioBlob = null;
+            this.config.audioChunks = [];
+            this.config.mediaRecorder = null;
+            this.elements.voiceBtn.classList.remove('recording');
+            this.elements.recordingUI.style.display = 'none';
+        }
+
+        showUsernameModal() {
+            this.elements.usernameModal.style.display = 'flex';
+        }
+
+        hideUsernameModal() {
+            this.elements.usernameModal.style.display = 'none';
+        }
+
+        useDefaultUsername() {
+            this.config.username = this.config.defaultUsername;
+            this.hideUsernameModal();
+            this.initChat();
+        }
+
+        saveUsername() {
+            const newUsername = this.elements.usernameInput.value.trim();
+            this.config.username = newUsername || this.config.defaultUsername;
+            this.hideUsernameModal();
+            this.initChat();
+        }
+
+        showSettingsModal() {
+            this.elements.changeUsernameInput.value = this.config.username;
+            this.elements.userIdDisplay.value = this.config.userId;
+            this.elements.settingsModal.style.display = 'flex';
+        }
+
+        hideSettingsModal() {
+            this.elements.settingsModal.style.display = 'none';
+        }
+
+        saveSettings() {
+            const newUsername = this.elements.changeUsernameInput.value.trim();
+            if (newUsername && newUsername !== this.config.username) {
+                this.config.username = newUsername;
+                this.showMessage('Username updated successfully');
+            }
+            this.hideSettingsModal();
+        }
+
+        showClearChatModal() {
+            this.elements.clearChatModal.style.display = 'flex';
+        }
+
+        hideClearChatModal() {
+            this.elements.clearChatModal.style.display = 'none';
+        }
+
+        async clearChat() {
+            try {
+                const { status } = await this.apiRequest('clear_chat', {
+                    chat_id: this.config.chatId,
+                    user_id: this.config.userId
+                });
+
+                if (status === 'success') {
+                    this.elements.messages.innerHTML = '';
+                    this.config.lastMessageId = 0;
+                    this.showMessage('Chat cleared successfully');
+                } else {
+                    throw new Error('Failed to clear chat');
+                }
+            } catch (error) {
+                console.error('Clear chat failed:', error);
+                this.showError('Failed to clear chat. Only chat admin can clear messages.');
+            } finally {
+                this.hideClearChatModal();
+            }
+        }
+
+        leaveChat() {
+            if (confirm('Are you sure you want to leave this chat?')) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        displayMessage(msg, isOwn = null) {
+            // Check if message already exists
+            if (document.querySelector(`[data-message-id="${msg.id}"]`)) return;
+
+            // Determine if message is from current user
+            if (isOwn === null) {
+                isOwn = msg.sender_id === this.config.userId;
+            }
+
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
+            messageEl.dataset.messageId = msg.id;
+            
+            let contentHTML = '';
+            
+            if (msg.is_voice || msg.message_type === 'voice') {
+                contentHTML = `
+                    <div class="voice-message">
+                        <audio controls>
+                            <source src="${msg.voice_url}" type="audio/webm">
+                            <source src="${msg.voice_url}" type="audio/mp3">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <span>${msg.duration ? Math.round(msg.duration) + 's' : ''}</span>
+                    </div>
+                `;
+            } else if (msg.file_info) {
+                if (msg.file_info.type.startsWith('image/')) {
+                    contentHTML = `
+                        <img src="${msg.file_info.url}" 
+                             alt="${msg.file_info.name}" 
+                             onclick="openMediaModal('${msg.file_info.url}', 'image')"
+                             style="cursor: pointer;">
+                    `;
+                } else if (msg.file_info.type.startsWith('video/')) {
+                    contentHTML = `
+                        <video controls 
+                               onclick="openMediaModal('${msg.file_info.url}', 'video')"
+                               style="cursor: pointer;">
+                            <source src="${msg.file_info.url}" type="${msg.file_info.type}">
+                            Your browser does not support the video element.
+                        </video>
+                    `;
+                } else {
+                    const fileSize = msg.file_info.size ? this.formatFileSize(msg.file_info.size) : '';
+                    contentHTML = `
+                        <a href="${msg.file_info.url}" 
+                           download="${msg.file_info.name}" 
+                           class="file-link">
+                            <span>📁</span>
+                            <div>
+                                <div>${msg.file_info.name}</div>
+                                ${fileSize ? `<small style="opacity: 0.7;">${fileSize}</small>` : ''}
+                            </div>
+                        </a>
+                    `;
+                }
+            } else {
+                contentHTML = this.escapeHtml(msg.content);
+            }
+
+            messageEl.innerHTML = `
+                <div class="message-info">
+                    <span class="message-sender">${this.escapeHtml(msg.sender_name)}</span>
+                    <span class="message-time">${this.formatTime(msg.created_at)}</span>
+                </div>
+                <div class="message-content">${contentHTML}</div>
+            `;
+
+            this.elements.messages.appendChild(messageEl);
+            this.scrollToBottom();
+        }
+
+        async apiRequest(action, data) {
+            try {
+                this.updateConnectionStatus('connecting');
+                const response = await fetch(this.config.apiBase, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ 
+                        action,
+                        ...data,
+                        chat_id: this.config.chatId,
+                        user_id: this.config.userId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result || result.status === undefined) {
+                    throw new Error('Invalid server response');
+                }
+                
+                if (result.status !== 'success') {
+                    throw new Error(result.message || 'Action failed');
+                }
+                
+                this.updateConnectionStatus('connected');
+                return result;
+            } catch (error) {
+                this.updateConnectionStatus('error');
+                console.error(`API request failed (${action}):`, error);
+                throw error;
+            }
+        }
+
+        updateConnectionStatus(status) {
+            if (this.config.lastConnectionStatus === status && status === 'connected') {
+                return;
+            }
+
+            this.config.lastConnectionStatus = status;
+            const statusEl = this.elements.connectionStatus;
+            
+            if (this.config.connectionStatusTimeout) {
+                clearTimeout(this.config.connectionStatusTimeout);
+            }
+
+            statusEl.className = 'connection-status ' + status;
+            statusEl.querySelector('.status-text').textContent = 
+                status === 'connected' ? 'Secure connection' :
+                status === 'error' ? 'Connection error' : 'Connecting...';
+
+            statusEl.classList.add('show');
+
+            const hideDelay = status === 'connected' ? 2000 : 
+                             status === 'error' ? 5000 : 3000;
+
+            this.config.connectionStatusTimeout = setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, hideDelay);
+        }
+
+        handleConnectionError(error) {
+            console.error('Connection error:', error);
+            this.updateConnectionStatus('error');
+            
+            if (this.config.retryCount < 3) {
+                this.showError(`${error.message}. Reconnecting... (Attempt ${this.config.retryCount + 1})`);
+            } else {
+                this.showError('Connection lost. Please check your network and refresh the page.');
+            }
+        }
+
+        showError(message) {
+            const errorEl = document.createElement('div');
+            errorEl.className = 'error-message';
+            errorEl.textContent = message;
+            document.body.appendChild(errorEl);
+            
+            setTimeout(() => {
+                errorEl.style.opacity = '0';
+                setTimeout(() => errorEl.remove(), 300);
+            }, 5000);
+        }
+
+        showMessage(message) {
+            const msgEl = document.createElement('div');
+            msgEl.className = 'status-message';
+            msgEl.textContent = message;
+            document.body.appendChild(msgEl);
+            
+            setTimeout(() => {
+                msgEl.style.opacity = '0';
+                setTimeout(() => msgEl.remove(), 300);
+            }, 3000);
+        }
+
+        updateParticipantCount(count) {
+            // Implement if you have a participant count display
+        }
+
+        scrollToBottom() {
+            this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+        }
+
+        startMessagePolling() {
+            this.getMessages();
+            this.pollInterval = setInterval(() => this.getMessages(), this.config.pollInterval);
+        }
+
+        generateId(prefix = '') {
+            return prefix + Math.random().toString(36).substr(2, 9);
+        }
+
+        getChatIdFromUrl() {
+            return new URLSearchParams(window.location.search).get('cid');
+        }
+
+        formatTime(timestamp) {
+            return new Date(timestamp).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    }
+
+    // Global function for media modal
+    window.openMediaModal = function(url, type) {
+        const modal = document.createElement('div');
+        modal.className = 'media-modal';
+        modal.onclick = () => modal.remove();
+        
+        const mediaElement = type === 'video' ? 
+            `<video controls autoplay><source src="${url}"></video>` :
+            `<img src="${url}" alt="Full size image">`;
+        
+        modal.innerHTML = `
+            ${mediaElement}
+            <button class="media-close" onclick="event.stopPropagation(); this.parentElement.remove()">×</button>
+        `;
+        
+        document.body.appendChild(modal);
+    };
+
+    // Initialize the chat
+    new SecureChat();
+});
+    </script>
+</body>
+</html>
